@@ -1,12 +1,13 @@
 import sys
 import random
 import json
+import os
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QPushButton, QLabel, QGridLayout, QComboBox, QLineEdit, QMessageBox, QFileDialog, QShortcut, QSlider
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QPainter, QKeySequence
+from PyQt5.QtGui import QKeyEvent, QPixmap, QPainter, QKeySequence, QColor, QFont
 
 
 class BingoCardWindow(QWidget):
@@ -62,46 +63,26 @@ class BingoCardWindow(QWidget):
                 self.grid_layout.addWidget(button, i, j)
                 row.append(button)
             self.buttons.append(row)
-        
-        #Export-Buttons
-        self.button_layout = QVBoxLayout
-        self.save_button = QPushButton("Speichern")
-        self.save_button.setStyleSheet("""
-            QPushButton {
-                font-size: 16px;
-                background-color: #0078d4;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #005a9e;
-            }
-        """)
-        self.save_button.clicked.connect(lambda: self.export_card("PLBingocard.json", marked=False))
 
-        self.export_button = QPushButton("Teilen")
-        self.export_button.setStyleSheet("""
-            QPushButton {
-                font-size: 16px;
-                background-color: #0078d4;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #005a9e;
-            }
-        """)
+        #Screenshot vom Fenster machen
+        self.shortcut_export = QShortcut(QKeySequence("Ctrl+Q"), self)
+        self.shortcut_export.activated.connect(lambda: self.safeCardAsScreenshot(True))
 
-        self.export_button.clicked.connect(lambda: self.export_card("Bingocard", marked=False))
+        #Karte als json Datei exportieren zum Teilen mit anderen
+        self.shortcut_export = QShortcut(QKeySequence("Ctrl+E"), self)
+        self.shortcut_export.activated.connect(lambda: self.export_card(True))
+
+        #Karte als json Datei exportieren zum Speichern und später weitermachen
+        self.shortcut_export = QShortcut(QKeySequence("Ctrl+S"), self)
+        self.shortcut_export.activated.connect(lambda: self.safeCardAsScreenshot(False))
 
         self.setLayout(self.grid_layout)
 
         # Fenster ziehen ermöglichen
         self.old_pos = None
+
+
+
 
     # Ersetze den bisherigen Inhalt der format_text-Methode durch den folgenden Code:
     def textLaengeAnpassen(self, text):
@@ -149,24 +130,26 @@ class BingoCardWindow(QWidget):
         if event.button() == Qt.RightButton:
             self.old_pos = None
 
-    
+    def export_card(self, marked=False):
+        options = QFileDialog.Options()
+        filename, _ = QFileDialog.getSaveFileName(self, "Karte exportieren", "", "JSON Files (*.json)", options=options)
+        size = self.size
+        terms = self.terms
+        marked_status = [[self.buttons[i][j].isChecked() for j in range(size)] for i in range(size)]
+        data = {'size': size, 'terms': terms, 'marked': marked_status}
+        with open(filename, 'w') as f:
+            json.dump(data, f)
 
-    def export_card(self, filename: str, marked=False):
-        pixmap = QPixmap(self.size * 100, self.size * 100)
-        pixmap.fill(Qt.white)
-        painter = QPainter(pixmap)
-
-        for i in range(self.size):
-            for j in range(self.size):
-                term = self.terms[i * self.size + j]
-                rect = self.grid_layout.itemAtPosition(i, j).widget().geometry()
-                painter.drawRect(rect)
-                painter.drawText(rect, Qt.AlignCenter, term)
-                if marked and self.buttons[i][j].isChecked():
-                    painter.fillRect(rect, Qt.green)
-
-        painter.end()
+    def safeCardAsScreenshot(self, marked=False):
+            # Screenshot des aktuellen Bingo-Karten-Fensters
+        pixmap = self.grab()
+        options = QFileDialog.Options()
+        filename, _ = QFileDialog.getSaveFileName(self, "Karte exportieren", "", "PNG Files (*.png)", options=options)
+        # Speichern des Screenshots als Bilddatei
         pixmap.save(filename)
+        print(f"Karte erfolgreich als {filename} gespeichert.")
+
+
 
 
 class BingoApp(QMainWindow):
@@ -201,6 +184,7 @@ class BingoApp(QMainWindow):
         self.opacitySlider.valueChanged.connect(self.update_opacityLabel)
         
         self.opacityLabel = QLabel("Transparenz: 0%")
+        self.opacity_level = (100-self.opacitySlider.value())/100
 
         self.layout.addWidget(self.size_label)
         self.layout.addWidget(self.size_combo)
@@ -215,7 +199,7 @@ class BingoApp(QMainWindow):
         self.opacityLabel.setText(f"Transparenz: {size}%")
 
     def create_card(self):
-        opacity = (100-self.opacitySlider.value())/100
+        
         size_str = self.size_combo.currentText()
         size = int(size_str[0])
         terms = self.word_input.text().split(', ')
@@ -224,7 +208,7 @@ class BingoApp(QMainWindow):
             QMessageBox.warning(self, "Fehler", f"Du brauchst mindestens {size * size} Wörter!")
             return
 
-        self.card_window = BingoCardWindow(size, terms, opacity)
+        self.card_window = BingoCardWindow(size, terms, self.opacity_level)
         self.card_window.show()
 
         layout = QVBoxLayout()
@@ -238,7 +222,7 @@ class BingoApp(QMainWindow):
                 data = json.load(f)
                 size = data['size']
                 terms = data['terms']
-                self.card_window = BingoCardWindow(size, terms)
+                self.card_window = BingoCardWindow(size, terms, self.opacity_level)
                 self.card_window.show()
 
                 for i in range(size):
@@ -256,18 +240,7 @@ class BingoApp(QMainWindow):
                 layout.addWidget(save_marked_button)
                 self.card_window.setLayout(layout)
 
-    def export_card(self, marked=False):
-        options = QFileDialog.Options()
-        filename, _ = QFileDialog.getSaveFileName(self, "Karte exportieren", "", "PNG Files (*.png);;JSON Files (*.json)", options=options)
-        if filename.endswith(".png"):
-            self.card_window.export_card(filename, marked)
-        elif filename.endswith(".json"):
-            size = self.card_window.size
-            terms = self.card_window.terms
-            marked_status = [[self.card_window.buttons[i][j].isChecked() for j in range(size)] for i in range(size)]
-            data = {'size': size, 'terms': terms, 'marked': marked_status}
-            with open(filename, 'w') as f:
-                json.dump(data, f)
+
 
 
 if __name__ == "__main__":
