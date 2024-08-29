@@ -72,11 +72,11 @@ class BingoCardWindow(QWidget):
 
         #Karte als json Datei exportieren zum Teilen mit anderen
         self.shortcut_export = QShortcut(QKeySequence("Ctrl+E"), self)
-        self.shortcut_export.activated.connect(lambda: self.export_card(True))
+        self.shortcut_export.activated.connect(lambda: self.export_card(False))
 
         #Karte als json Datei exportieren zum Speichern und später weitermachen
         self.shortcut_export = QShortcut(QKeySequence("Ctrl+S"), self)
-        self.shortcut_export.activated.connect(lambda: self.safeCardAsScreenshot(False))
+        self.shortcut_export.activated.connect(lambda: self.export_card(True))
 
         self.setLayout(self.grid_layout)
 
@@ -132,12 +132,16 @@ class BingoCardWindow(QWidget):
         if event.button() == Qt.RightButton:
             self.old_pos = None
 
-    def export_card(self, marked=False):
+    def export_card(self, marked):
         options = QFileDialog.Options()
         filename, _ = QFileDialog.getSaveFileName(self, "Karte exportieren", "", "JSON Files (*.json)", options=options)
         size = self.size
         terms = self.terms
-        marked_status = [[self.buttons[i][j].isChecked() for j in range(size)] for i in range(size)]
+        if marked == True:
+            marked_status = [[self.buttons[i][j].isChecked() for j in range(size)] for i in range(size)]
+        else:
+            marked_status = [[False for j in range(size)] for i in range(size)]
+        
         data = {'size': size, 'terms': terms, 'marked': marked_status}
         with open(filename, 'w') as f:
             json.dump(data, f)
