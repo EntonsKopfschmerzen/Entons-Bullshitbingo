@@ -16,8 +16,10 @@ class BingoCardWindow(QWidget):
         self.size = size
         self.terms = terms
         self.grid_layout = QGridLayout()
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setWindowFlags(Qt.FramelessWindowHint)  # Entfernt die Titelleiste
         self.setWindowOpacity(opacity) 
+        print("Opacity: ", opacity)
 
         cardLenght = ((self.size)*100)
         cardHeight = cardLenght
@@ -184,7 +186,7 @@ class BingoApp(QMainWindow):
         self.opacitySlider.valueChanged.connect(self.update_opacityLabel)
         
         self.opacityLabel = QLabel("Transparenz: 0%")
-        self.opacity_level = (100-self.opacitySlider.value())/100
+        
 
         self.layout.addWidget(self.size_label)
         self.layout.addWidget(self.size_combo)
@@ -208,6 +210,7 @@ class BingoApp(QMainWindow):
             QMessageBox.warning(self, "Fehler", f"Du brauchst mindestens {size * size} Wörter!")
             return
 
+        self.opacity_level = (100-self.opacitySlider.value())/100
         self.card_window = BingoCardWindow(size, terms, self.opacity_level)
         self.card_window.show()
 
@@ -222,6 +225,7 @@ class BingoApp(QMainWindow):
                 data = json.load(f)
                 size = data['size']
                 terms = data['terms']
+                self.opacity_level = (100-self.opacitySlider.value())/100
                 self.card_window = BingoCardWindow(size, terms, self.opacity_level)
                 self.card_window.show()
 
