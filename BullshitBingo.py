@@ -16,7 +16,7 @@ class BingoCardWindow(QWidget):
         self.size = size
         self.terms = terms
         self.grid_layout = QGridLayout()
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        #self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setWindowFlags(Qt.FramelessWindowHint)  # Entfernt die Titelleiste
         self.setWindowOpacity(opacity) 
         print("Opacity: ", opacity)
@@ -247,9 +247,6 @@ class BingoApp(QMainWindow):
                 layout.addWidget(save_button)
                 layout.addWidget(save_marked_button)
                 self.card_window.setLayout(layout)
-
-
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
