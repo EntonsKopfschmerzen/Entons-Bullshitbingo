@@ -1,6 +1,6 @@
 Ein kleines Billshit Bingo.
-Import/Export Funktion sind noch nicht fertig.
-Linksklick zum togglen der Felder, Rechtsklick gedrückt halten zum Verschieben der Bingokarte.
+
+Folgende Funktionen: Einstellen der Kartengröße zwischen 3-4-5, Import/Export der Bingokarte, Einfügen eigener Wörter, Wortzähler beim Eingeben, automatische Anpassung an Dark/Light Mode vom Betriebssystem, einstellen der Transparenz (Stufenlos). Linksklick zum togglen der Felder, Rechtsklick gedrückt halten zum Verschieben der Bingokarte.
 
 Screenshot erstellen: STRG+Q
 
