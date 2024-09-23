@@ -17,6 +17,9 @@ class BingoCardWindow(QWidget):
         self.terms = terms
         self.shuffle = shuffle
         self.grid_layout = QGridLayout()
+        self.totalBingo = 0
+
+        
 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint |
                             Qt.WindowType.WindowStaysOnTopHint)  # Entfernt die Titelleiste
@@ -37,6 +40,15 @@ class BingoCardWindow(QWidget):
         if self.shuffle == True:
             random.shuffle(self.terms)
 
+        
+        self.buttons_with_Bingo = []
+        for i in range(self.size):
+            bingoRow = []
+            for j in range(self.size):
+                bingoRow.append(False)
+            self.buttons_with_Bingo.append(bingoRow)
+
+
         self.buttons = []
         for i in range(self.size):
             row = []
@@ -53,7 +65,7 @@ class BingoCardWindow(QWidget):
                         font-size: 16px;
                         font-weight: bold;
                         background-color: #f0f0f0;
-                        border: 2px solid #0078d4;
+                        border: 2px solid #9C9C9C;
                         border-radius: 0px;
                         color: #000;
                         padding: 0;
@@ -68,9 +80,10 @@ class BingoCardWindow(QWidget):
                     }
                 """)
                 self.grid_layout.addWidget(button, i, j)
+                button.clicked.connect(lambda: self.check_bingo_action())
                 row.append(button)
             self.buttons.append(row)
-
+            
         # Shortcuts erstellen
         self.shortcut_export = QShortcut(QKeySequence('Ctrl+Q'), self)
         self.shortcut_export.activated.connect(lambda: self.safeCardAsScreenshot(True))
@@ -85,6 +98,119 @@ class BingoCardWindow(QWidget):
 
         # Fenster ziehen ermöglichen
         self.old_pos = None
+
+    def check_bingo_action(self):
+        self.checkBingo()
+        self.bingo_color_change()
+        print("Bingos: ", self.totalBingo)
+
+    
+    def bingo_color_change(self):
+        bingoColor = "#000000"
+        match self.totalBingo:
+            case 0: bingoColor = "#000000"
+            case 1: bingoColor = "#0000FF"
+            case 2: bingoColor = "#36648B"
+            case 3: bingoColor = "#6959CD"
+            case 4: bingoColor = "#00868B"
+            case 5: bingoColor = "#000080"
+            case 6: bingoColor = "#7FFFD4"
+            case 7: bingoColor = "#FF4040"
+            case 8: bingoColor = "#CD9B9B"
+            case 9: bingoColor = "#8B4513"
+            case 10: bingoColor = "#228B22"
+            case 11: bingoColor = "#ADFF2F"
+            case 12: bingoColor = "#C1FFC1"
+
+        stylesheetNonBingo = f"""
+            QPushButton {{
+                font-size: 16px;
+                font-weight: bold;
+                background-color: #f0f0f0;
+                border: 2px solid #9C9C9C;
+                border-radius: 0px;
+                color: #000;
+                padding: 0;
+            }}
+            QPushButton:checked {{
+                background-color: #000000;
+                color: white;
+            }}
+            QPushButton:hover {{
+                background-color: #616161;
+                color: white;             
+            }}
+        """
+
+        stylesheetBingo = f"""
+            QPushButton {{
+                font-size: 16px;
+                font-weight: bold;
+                background-color: #f0f0f0;
+                border: 2px solid #9C9C9C;
+                border-radius: 0px;
+                color: #000;
+                padding: 0;
+            }}
+            QPushButton:checked {{
+                background-color: {bingoColor};
+                color: white;
+            }}
+            QPushButton:hover {{
+                background-color: #616161;
+                color: white;             
+            }}
+        """
+        print("stylesheetBingoColor: ", stylesheetBingo)
+
+        for row in range(self.size):
+            for col in range(self.size):
+                button = self.buttons[row][col]
+                if self.buttons_with_Bingo[row][col]:
+                    button.setStyleSheet(stylesheetBingo)
+                else:
+                    button.setStyleSheet(stylesheetNonBingo)
+                button.repaint()  # Ensure the button is repainted
+
+        self.buttons_with_Bingo = [[False] * self.size for _ in range(self.size)]
+
+    def checkBingo(self):
+        size = self.size  # Größe des Bingo-Felds
+        self.totalBingo = 0   
+        bingoTriggered = False
+        #Überprüfe Zeilen
+        for row in range(size):        
+            if all(self.buttons[row][col].isChecked() for col in range(size)):
+                self.totalBingo = self.totalBingo +1
+                bingoTriggered = True
+                for col in range(size):
+                    self.buttons_with_Bingo[row][col] = True
+            
+        #Überprüfe Spalten
+        for col in range(size):
+            if all(self.buttons[row][col].isChecked() for row in range(size)):
+                self.totalBingo = self.totalBingo +1
+                bingoTriggered = True
+                for row in range(size):
+                    self.buttons_with_Bingo[row][col] = True
+
+        #Überprüfe Hauptdiagonale (von oben links nach unten rechts)
+        if all(self.buttons[i][i].isChecked() for i in range(size)):
+            self.totalBingo = self.totalBingo +1
+            bingoTriggered = True
+            for i in range(size):
+                self.buttons_with_Bingo[i][i] = True
+
+        #Überprüfe Nebendiagonale (von oben rechts nach unten links)
+        if all(self.buttons[i][size - 1 - i].isChecked() for i in range(size)):
+            self.totalBingo = self.totalBingo +1
+            bingoTriggered = True
+            for i in range(size):
+                self.buttons_with_Bingo[i][size - 1 - i] = True
+        print(self.buttons_with_Bingo[0][0], ", ", self.buttons_with_Bingo[0][1], ", ", self.buttons_with_Bingo[0][2])
+        print(self.buttons_with_Bingo[1][0], ", ", self.buttons_with_Bingo[1][1], ", ", self.buttons_with_Bingo[1][2])
+        print(self.buttons_with_Bingo[2][0], ", ", self.buttons_with_Bingo[2][1], ", ", self.buttons_with_Bingo[2][2])
+
 
     def textLaengeAnpassen(self, text):
         max_length = 9
@@ -155,9 +281,6 @@ class BingoCardWindow(QWidget):
             print(f"Karte erfolgreich als {filename} gespeichert.")
 
 
-
-
-
 class BingoApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -192,7 +315,6 @@ class BingoApp(QMainWindow):
         self.opacitySlider.valueChanged.connect(self.update_opacityLabel)
         
         self.opacityLabel = QLabel("Transparenz: 0%")
-        
 
         self.layout.addWidget(self.size_label)
         self.layout.addWidget(self.size_combo)
