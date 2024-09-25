@@ -4,37 +4,44 @@ import json
 import os
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-    QPushButton, QLabel, QGridLayout, QComboBox, QLineEdit, QMessageBox, QFileDialog, QSlider
+    QPushButton, QLabel, QGridLayout, QComboBox, QLineEdit, QMessageBox, QFileDialog, QSlider, QToolBar
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QKeyEvent, QPixmap, QPainter, QKeySequence, QColor, QFont, QShortcut
+from PyQt6.QtGui import QKeyEvent, QPixmap, QPainter, QKeySequence, QColor, QFont, QShortcut, QAction
 
 
-class BingoCardWindow(QWidget):
+class BingoCardWindow(QMainWindow):
     def __init__(self, size, terms, opacity, parent=None, shuffle=True):
         super().__init__(parent)
         self.size = size
         self.terms = terms
         self.shuffle = shuffle
-        self.grid_layout = QGridLayout()
+        self.layout = QGridLayout()
         self.totalBingo = 0
 
-        
+        self.toolbarMenu = QToolBar("Menu", self)
+        self.toolbarMenu.addAction("Screenshot", lambda: self.safeCardAsScreenshot())
+        self.toolbarMenu.addAction("Export", lambda: self.export_card(False))
+        self.toolbarMenu.addAction("Speichern", lambda: self.export_card(True))
+        self.toolbarMenu.addAction("?", lambda: self.openHelpWindow())
+        self.addToolBar(self.toolbarMenu)
+        self.toolbarMenu.setVisible(True)
 
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint |
-                            Qt.WindowType.WindowStaysOnTopHint)  # Entfernt die Titelleiste
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)  # Entfernt die Titelleiste
         self.setWindowOpacity(opacity)
     
         print("Opacity: ", opacity)
         
-
+        self.windowSize = self.sizeHint()
+        self.toolbarSize = self.toolbarMenu.sizeHint()
         cardLength = (self.size * 100)
-        cardHeight = cardLength
+        cardHeight = (self.size * 100)
+        cardHeight += self.toolbarSize.height()
         self.setFixedSize(cardLength, cardHeight)
 
         # Layout-Einstellungen
-        self.grid_layout.setSpacing(0)  # Setze den Abstand zwischen den Widgets auf 0
-        self.grid_layout.setContentsMargins(0, 0, 0, 0)  # Setze die Ränder des Layouts auf 0
+        self.layout.setSpacing(0)  # Setze den Abstand zwischen den Widgets auf 0
+        self.layout.setContentsMargins(0, 0, 0, 0)  # Setze die Ränder des Layouts auf 0
 
         # Shuffle und Grid erstellen
         if self.shuffle == True:
@@ -55,9 +62,8 @@ class BingoCardWindow(QWidget):
             for j in range(self.size):
                 term = self.terms[i * self.size + j]
                 print(term)
-                feldText = self.textLaengeAnpassen(term)  # type: ignore
+                feldText = self.textLaengeAnpassen(term) 
                 button = QPushButton(feldText)
-                
                 button.setCheckable(True)
                 button.setFixedSize(100, 100)
                 button.setStyleSheet("""
@@ -79,25 +85,53 @@ class BingoCardWindow(QWidget):
                         color: white;             
                     }
                 """)
-                self.grid_layout.addWidget(button, i, j)
+                self.layout.addWidget(button, i, j)
                 button.clicked.connect(lambda: self.check_bingo_action())
                 row.append(button)
             self.buttons.append(row)
             
-        # Shortcuts erstellen
-        self.shortcut_export = QShortcut(QKeySequence('Ctrl+Q'), self)
-        self.shortcut_export.activated.connect(lambda: self.safeCardAsScreenshot(True))
+        #self.shortcut_export = QShortcut(QKeySequence('Ctrl+E'), self)
+        #self.shortcut_export.activated.connect(lambda: self.export_card(False))
 
-        self.shortcut_export = QShortcut(QKeySequence('Ctrl+E'), self)
-        self.shortcut_export.activated.connect(lambda: self.export_card(False))
+        #self.shortcut_export = QShortcut(QKeySequence('Ctrl+S'), self)
+        #self.shortcut_export.activated.connect(lambda: self.export_card(True))
+        
+        widget = QWidget()
+        widget.setLayout(self.layout)
+        self.setCentralWidget(widget)
 
-        self.shortcut_export = QShortcut(QKeySequence('Ctrl+S'), self)
-        self.shortcut_export.activated.connect(lambda: self.export_card(True))
-
-        self.setLayout(self.grid_layout)
-
-        # Fenster ziehen ermöglichen
         self.old_pos = None
+
+    def keyPressEvent(self, event):
+        if event.modifiers() == Qt.KeyboardModifier.AltModifier:
+            self.toggle_toolbar_visibility()
+        if event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_E:
+            self.export_card(False)
+        if event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_S:
+            self.export_card(True)
+        if event.modifiers() == Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_Q:
+            self.safeCardAsScreenshot()
+        if event.key() == Qt.Key.Key_H:
+            self.openHelpWindow()
+
+    def openHelpWindow(self):
+        self.help_window = HelpWindow()
+        self.help_window.show()
+
+    def toggle_toolbar_visibility(self):
+        self.windowSize = self.sizeHint()
+        self.toolbarSize = self.toolbarMenu.sizeHint()
+        is_visible = self.toolbarMenu.isVisible()  
+
+        if is_visible:
+            self.setFixedHeight(self.windowSize.height() - self.toolbarSize.height())
+        else:
+            self.setFixedHeight(self.windowSize.height() + self.toolbarSize.height())
+
+        self.toolbarMenu.setVisible(not is_visible)  
+        self.layout.update()
+        self.adjustSize() 
+
 
     def check_bingo_action(self):
         self.checkBingo()
@@ -271,7 +305,7 @@ class BingoCardWindow(QWidget):
             with open(filename, 'w') as f:
                 json.dump(data, f)
 
-    def safeCardAsScreenshot(self, marked=False):
+    def safeCardAsScreenshot(self):
         # Screenshot des aktuellen Bingo-Karten-Fensters
         pixmap = self.grab()
         filename, _ = QFileDialog.getSaveFileName(self, "Karte exportieren", "", "PNG Files (*.png)")
@@ -344,6 +378,7 @@ class BingoApp(QMainWindow):
         if len(terms) < size * size:
             QMessageBox.warning(self, "Fehler", f"Du brauchst mindestens {size * size} Wörter!")
             return
+        
         self.opacity_level = (100-self.opacitySlider.value())/100
         self.card_window = BingoCardWindow(size, terms, self.opacity_level, shuffle=True)
         self.card_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
@@ -379,8 +414,23 @@ class BingoApp(QMainWindow):
                 layout.addWidget(save_marked_button)
                 self.card_window.setLayout(layout)
 
+class HelpWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+        self.label = QLabel(
+            "ALT-Taste zum Enternen der Leiste.\n\n"
+            "Rechtsklick gedrückt halten zum Verschieben der Bingokarte.\n\n"
+            "STRG+Q: Screenshot erstellen.\n\n"
+            "STRG+E: Exportieren (ohne markierte Felder).\n\n"
+            "STRG+S: Speichern (mit markierten Feldern)"
+        )
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = BingoApp()
     window.show()
     sys.exit(app.exec())
+
