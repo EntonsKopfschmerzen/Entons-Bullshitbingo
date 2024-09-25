@@ -2,6 +2,10 @@ Ein kleines Billshit Bingo.
 
 Folgende Funktionen: Einstellen der Kartengröße zwischen 3-4-5, Import/Export der Bingokarte, Einfügen eigener Wörter, Wortzähler beim Eingeben, automatische Anpassung an Dark/Light Mode vom Betriebssystem, einstellen der Transparenz (Stufenlos). Linksklick zum togglen der Felder, Rechtsklick gedrückt halten zum Verschieben der Bingokarte.
 
+Alt-Taste: Toolbar ausblenden/einblenden.
+
+H-Taste: Hilfe-Fenster. 
+
 Screenshot erstellen: STRG+Q
 
 Exportieren (also ohne markierte Felder): STRG+E
