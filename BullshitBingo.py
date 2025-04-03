@@ -4,7 +4,7 @@ import json
 import os
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-    QPushButton, QLabel, QGridLayout, QComboBox, QLineEdit, QMessageBox, QFileDialog, QSlider, QToolBar
+    QPushButton, QLabel, QGridLayout, QComboBox, QLineEdit, QMessageBox, QFileDialog, QSlider, QToolBar, QCheckBox
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QKeyEvent, QPixmap, QPainter, QKeySequence, QColor, QFont, QShortcut, QAction
@@ -28,7 +28,7 @@ class BingoCardWindow(QMainWindow):
         self.toolbarMenu.setVisible(True)
 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)  # Entfernt die Titelleiste
-        self.setWindowOpacity(opacity)
+        #self.setWindowOpacity(opacity)
     
         print("Opacity: ", opacity)
         
@@ -38,10 +38,13 @@ class BingoCardWindow(QMainWindow):
         cardHeight = (self.size * 100)
         cardHeight += self.toolbarSize.height()
         self.setFixedSize(cardLength, cardHeight)
+        if(opacity < 1):
+            self.setWindowOpacity(opacity)
 
         # Layout-Einstellungen
         self.layout.setSpacing(0)  # Setze den Abstand zwischen den Widgets auf 0
         self.layout.setContentsMargins(0, 0, 0, 0)  # Setze die Ränder des Layouts auf 0
+        
 
         # Shuffle und Grid erstellen
         if self.shuffle == True:
@@ -55,7 +58,7 @@ class BingoCardWindow(QMainWindow):
                 bingoRow.append(False)
             self.buttons_with_Bingo.append(bingoRow)
 
-
+        
         self.buttons = []
         for i in range(self.size):
             row = []
@@ -72,7 +75,7 @@ class BingoCardWindow(QMainWindow):
                         font-weight: bold;
                         background-color: #f0f0f0;
                         border: 2px solid #9C9C9C;
-                        border-radius: 0px;
+                        border-radius: 4px;
                         color: #000;
                         padding: 0;
                     }
@@ -347,8 +350,11 @@ class BingoApp(QMainWindow):
         self.opacitySlider.setMaximum(80) 
         self.opacitySlider.setValue(0)
         self.opacitySlider.valueChanged.connect(self.update_opacityLabel)
+
         
+        self.opacityCheckbox = QCheckBox("Transparenz deaktivieren (empfohlen für Streamer*innen, Funktion on-stream evtl. buggy!)")
         self.opacityLabel = QLabel("Transparenz: 0%")
+
 
         self.layout.addWidget(self.size_label)
         self.layout.addWidget(self.size_combo)
@@ -356,8 +362,12 @@ class BingoApp(QMainWindow):
         self.layout.addWidget(self.word_input)
         self.layout.addWidget(self.create_button)
         self.layout.addWidget(self.import_button)        
+        self.layout.addWidget(self.opacityCheckbox)   
         self.layout.addWidget(self.opacityLabel)
         self.layout.addWidget(self.opacitySlider)
+        
+            
+
 
     def update_opacityLabel(self):
         size = self.opacitySlider.value()
@@ -379,9 +389,15 @@ class BingoApp(QMainWindow):
             QMessageBox.warning(self, "Fehler", f"Du brauchst mindestens {size * size} Wörter!")
             return
         
-        self.opacity_level = (100-self.opacitySlider.value())/100
+        if self.opacityCheckbox.isChecked():
+            self.opacity_level = 1.0
+            print("opacity level 1")
+        else:
+            self.opacity_level = (100-self.opacitySlider.value())/100
+            print("opacity level " , self.opacity_level)
+
         self.card_window = BingoCardWindow(size, terms, self.opacity_level, shuffle=True)
-        self.card_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        ##self.card_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.card_window.show()
 
         layout = QVBoxLayout()
