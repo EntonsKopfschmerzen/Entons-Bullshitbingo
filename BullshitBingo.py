@@ -4,7 +4,7 @@ import json
 import os
 from BingoCard import BingoCardWindow 
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, 
     QPushButton, QLabel, QGridLayout, QComboBox, QLineEdit, QMessageBox, QFileDialog, QSlider, QToolBar, QCheckBox, QColorDialog, QSpinBox
 )
 from PyQt6.QtCore import Qt
@@ -40,9 +40,10 @@ class BingoApp(QMainWindow):
         fontsize_layout.addWidget(self.fontsize_input)
 
 
-        self.word_input = QLineEdit()
+        self.word_input = QTextEdit()
         self.word_input.setPlaceholderText("Gib die Wörter mit Komma getrennt ein: Apfel, Keks, Baum...")
         self.word_input.textChanged.connect(self.update_word_count)
+        self.word_input.setFixedHeight(60)
 
         self.create_button = QPushButton("Karte erstellen")
         self.create_button.clicked.connect(self.create_card)
@@ -106,7 +107,7 @@ class BingoApp(QMainWindow):
         self.opacityLabel.setText(f"Transparenz: {size}%")
 
     def update_word_count(self):
-        text = self.word_input.text()
+        text = self.word_input.toPlainText()
         words = text.split(', ')
         num_words = len(words)
         self.word_count_label.setText(f"Wörter eingegeben: {num_words}")
@@ -114,7 +115,7 @@ class BingoApp(QMainWindow):
     def create_card(self):
         size_str = self.size_combo.currentText()
         size = int(size_str[0])
-        terms = self.word_input.text().split(', ')
+        terms = self.word_input.toPlainText().split(', ')
         self.fontSize = self.fontsize_input.value().__str__()
         print("Schriftgröße: ", self.fontSize)
 
