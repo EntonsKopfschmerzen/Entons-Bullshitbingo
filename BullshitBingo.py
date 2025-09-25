@@ -2,7 +2,8 @@ import sys
 import random
 import json
 import os
-from BingoCard import BingoCardWindow 
+from BingoCard import BingoCardWindow
+from ColorsSelectDialog import ColorsSelectDialog
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, 
     QPushButton, QLabel, QGridLayout, QComboBox, QLineEdit, QMessageBox, QFileDialog, QSlider, QToolBar, QCheckBox, QColorDialog, QSpinBox
@@ -21,7 +22,7 @@ class BingoApp(QMainWindow):
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout()
-   
+        self.colors = None # Initialize colors attribute
         self.central_widget.setLayout(self.layout)
 
         self.size_label = QLabel("Feldgröße:")
@@ -57,11 +58,9 @@ class BingoApp(QMainWindow):
         self.opacitySlider.setMaximum(80) 
         self.opacitySlider.setValue(0)
         self.opacitySlider.valueChanged.connect(self.update_opacityLabel)
-
         
         self.opacityCheckbox = QCheckBox("Transparenz deaktivieren (empfohlen für Streamer*innen, Funktion on-stream evtl. buggy!)")
         self.opacityLabel = QLabel("Transparenz: 0%")
-
  
         self.bingo_pushed_color = "#000000"
         self.bingo_notPushed_color = "#f0f0f0"
@@ -74,6 +73,9 @@ class BingoApp(QMainWindow):
         self.color_button_marked = QPushButton("Farbe auswählen")
         self.color_button_marked.clicked.connect(lambda: self.pick_color("checked"))
         self.color_button_marked_label = QLabel("Farbe für markierte Felder wählen")
+
+        self.testButton = QPushButton("Test Dialog öffnen")
+        self.testButton.clicked.connect(self.open_color_dialog)
 
 
         self.layout.addWidget(self.size_label)
@@ -90,7 +92,19 @@ class BingoApp(QMainWindow):
         self.layout.addWidget(self.color_button_notMarked)
         self.layout.addWidget(self.color_button_marked_label) 
         self.layout.addWidget(self.color_button_marked)
+        self.layout.addWidget(self.testButton)
 
+    def open_color_dialog(self):
+        if(self.colors is None):
+            dialog = ColorsSelectDialog(self)
+        else:
+            dialog = ColorsSelectDialog(self, farben = self.colors)
+            
+        if dialog.exec():
+            self.colors = dialog.colors  # Attribut auslesen
+            # Weiterverarbeitung der ausgewählten Farbe
+            for i in range(len(self.colors)):
+                print("Ausgewählte Farbe: Elmo ", self.colors[i].name())
 
     def pick_color(self, mode):
         color = QColorDialog.getColor()
@@ -130,7 +144,7 @@ class BingoApp(QMainWindow):
             self.opacity_level = (100-self.opacitySlider.value())/100
             print("opacity level " , self.opacity_level)
 
-        self.card_window = BingoCardWindow(size, terms, self.opacity_level, self.bingo_notPushed_color, self.bingo_pushed_color, self.fontSize, shuffle=True)
+        self.card_window = BingoCardWindow(size, terms, self.opacity_level, self.bingo_notPushed_color, self.bingo_pushed_color, self.fontSize, shuffle=True, colors=self.colors)
         ##self.card_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.card_window.show()
 
@@ -141,8 +155,10 @@ class BingoApp(QMainWindow):
     
         self.blub = self.notMarkedFieldcolor
 
+
     def colorPickActionMarked(self):
         self.markedFieldcolor = QColorDialog.getColor()
+
 
     def import_card(self):
         self.fontSize = self.fontsize_input.value()
@@ -154,7 +170,7 @@ class BingoApp(QMainWindow):
                 size = data['size']
                 terms = data['terms']
                 self.opacity_level = (100-self.opacitySlider.value())/100
-                self.card_window = BingoCardWindow(size, terms, self.opacity_level, self.bingo_notPushed_color, self.bingo_pushed_color, self.fontSize, shuffle=False)
+                self.card_window = BingoCardWindow(size, terms, self.opacity_level, self.bingo_notPushed_color, self.bingo_pushed_color, self.fontSize, shuffle=False, colors=self.colors)
                 self.card_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)    
                 self.card_window.show()
 
@@ -172,6 +188,23 @@ class BingoApp(QMainWindow):
                 layout.addWidget(save_button)
                 layout.addWidget(save_marked_button)
                 self.card_window.setLayout(layout)
+
+
+
+
+
+    def farbenZusammenfassen(self):
+        #
+        #
+        #
+        #
+        #
+        #
+        #
+        #
+        #
+        print("Enton")
+
         
 if __name__ == "__main__":
     app = QApplication(sys.argv)

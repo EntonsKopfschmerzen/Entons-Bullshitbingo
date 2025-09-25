@@ -12,18 +12,19 @@ from PyQt6.QtGui import QKeyEvent, QPixmap, QPainter, QKeySequence, QColor, QFon
 
 
 class BingoCardWindow(QMainWindow):
-    def __init__(self, size, terms, opacity, uncheckedColor, checkedColor, fontSize, parent=None, shuffle=True):
+    def __init__(self, size, terms, opacity, uncheckedColor, checkedColor, fontSize, parent=None, shuffle=True, colors=None):
         super().__init__(parent)
         self.size = size
         self.terms = terms
         self.shuffle = shuffle
         self.layout = QGridLayout()
         self.totalBingo = 0
+        self.colors = colors
         self.uncheckedColor = uncheckedColor
         self.checkedColor = checkedColor
 
         self.fontSize = fontSize + "px" #
-
+        
         self.toolbarMenu = QToolBar("Menu", self)
         self.toolbarMenu.addAction("Screenshot", lambda: self.safeCardAsScreenshot())
         self.toolbarMenu.addAction("Export", lambda: self.export_card(False))
@@ -39,7 +40,7 @@ class BingoCardWindow(QMainWindow):
         
         self.windowSize = self.sizeHint()
         self.toolbarSize = self.toolbarMenu.sizeHint()
-        cardLength = (self.size * 100)
+        cardLength = (self.size * 100) 
         cardHeight = (self.size * 100)
         #cardHeight += self.toolbarSize.height()
         self.setFixedSize(cardLength, cardHeight)
@@ -151,21 +152,31 @@ class BingoCardWindow(QMainWindow):
 
     
     def bingo_color_change(self):
+        
         bingoColor = "#000000"
-        match self.totalBingo:
-            case 0: bingoColor = "#000000"
-            case 1: bingoColor = "#0000FF"
-            case 2: bingoColor = "#36648B"
-            case 3: bingoColor = "#6959CD"
-            case 4: bingoColor = "#00868B"
-            case 5: bingoColor = "#000080"
-            case 6: bingoColor = "#7FFFD4"
-            case 7: bingoColor = "#FF4040"
-            case 8: bingoColor = "#CD9B9B"
-            case 9: bingoColor = "#8B4513"
-            case 10: bingoColor = "#228B22"
-            case 11: bingoColor = "#ADFF2F"
-            case 12: bingoColor = "#C1FFC1"
+        
+        if self.colors is not None:
+     
+            if self.totalBingo == 0:
+                bingoColor = "#000000"
+            else:
+                bingoColor = self.colors[self.totalBingo-1].name()
+                print("Bingo-Farbe: ", self.colors[self.totalBingo-1].name())
+        else:
+            match self.totalBingo:
+                case 0: bingoColor = "#000000"
+                case 1: bingoColor = "#0000FF"
+                case 2: bingoColor = "#36648B"
+                case 3: bingoColor = "#6959CD"
+                case 4: bingoColor = "#00868B"
+                case 5: bingoColor = "#000080"
+                case 6: bingoColor = "#7FFFD4"
+                case 7: bingoColor = "#FF4040"
+                case 8: bingoColor = "#CD9B9B"
+                case 9: bingoColor = "#8B4513"
+                case 10: bingoColor = "#228B22"
+                case 11: bingoColor = "#ADFF2F"
+                case 12: bingoColor = "#C1FFC1" 
 
         stylesheetNonBingo = f"""
             QPushButton {{
