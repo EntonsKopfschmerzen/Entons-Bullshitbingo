@@ -74,7 +74,7 @@ class BingoApp(QMainWindow):
         self.color_button_marked.clicked.connect(lambda: self.pick_color("checked"))
         self.color_button_marked_label = QLabel("Farbe für markierte Felder wählen")
 
-        self.testButton = QPushButton("Test Dialog öffnen")
+        self.testButton = QPushButton("Bingo-Farben einstellen")
         self.testButton.clicked.connect(self.open_color_dialog)
 
 
